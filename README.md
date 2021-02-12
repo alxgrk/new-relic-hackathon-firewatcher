@@ -1,9 +1,9 @@
-# Firewatch
+# 🔥 Firewatch
 
 A Progressive Web App for detecting fires in your neighborhood and getting alerts if new fires are detected.
 This project is a contribution to the New Relic Hackathon.
 
-Demo: https://kotlin-pwa-starter-kit.herokuapp.com/
+Demo: https://new-relic-hackathon-firewatch.herokuapp.com/
 
 ## Get started
 
