@@ -1,4 +1,6 @@
 // Fixes problems with hot-reload. Thanks to Robert Jaros (https://youtrack.jetbrains.com/issue/KT-32273)
+const webpack = require("webpack")
+const dotenv = require('dotenv').config({path: '../../../../.env'});
 
 config.resolve.modules.push("../../processedResources/Js/main");
 if (!config.devServer && config.output) {
@@ -39,3 +41,24 @@ class KvWebpackPlugin {
   }
 };
 config.plugins.push(new KvWebpackPlugin())
+
+// define env vars dependending on mode
+
+var selfUrl, apiUrl
+
+if (config.mode === "production") { // the build process makes the config object available
+  selfUrl = dotenv.parsed.SELF_URL
+  apiUrl = dotenv.parsed.API_URL
+} else {
+  selfUrl = "localhost:8080"
+  apiUrl = "localhost:8081"
+}
+
+const definePlugin = new webpack.DefinePlugin(
+    {
+      SELF_URL: selfUrl,
+      API_URL: apiUrl
+    }
+)
+
+config.plugins.push(definePlugin)

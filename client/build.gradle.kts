@@ -9,10 +9,11 @@ dependencies {
     implementation("org.jetbrains:kotlin-react:16.13.1-pre.110-kotlin-1.4.10")
     implementation("org.jetbrains:kotlin-react-dom:16.13.1-pre.110-kotlin-1.4.10")
     implementation(npm("react-loader-spinner", "3.1.14"))
+    implementation(npm("react-autocomplete-input", "1.0.15"))
 }
 
 kotlin {
-    js(IR) {
+    js {
         browser {
             binaries.executable()
         }

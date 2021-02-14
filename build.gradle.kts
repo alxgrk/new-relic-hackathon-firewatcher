@@ -12,19 +12,16 @@ repositories {
 }
 
 kotlin {
-    js(IR) {
+    js {
         browser {
             binaries.executable()
-            webpackTask {
+            commonWebpackConfig {
                 cssSupport.enabled = true
-            }
-            runTask {
-                cssSupport.enabled = true
+                cssSupport.mode = "extract"
             }
             testTask {
                 useKarma {
                     useChromeHeadless()
-                    webpackConfig.cssSupport.enabled = true
                 }
             }
         }
@@ -44,6 +41,7 @@ subprojects {
 
     dependencies {
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.3.9")
+        implementation(npm("dotenv", "8.2.0"))
     }
 
     tasks.register<Copy>("copyDistributionToRoot") {

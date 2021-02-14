@@ -1,11 +1,19 @@
 package client
 
+import client.components.fog
 import client.components.loadingComponent
-import kotlinx.coroutines.*
+import client.components.searchArea
+import kotlinext.js.jsObject
+import kotlinx.browser.window
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.await
+import kotlinx.coroutines.launch
 import kotlinx.html.js.onClickFunction
 import react.*
-import react.dom.*
-import kotlinx.browser.window
+import react.dom.button
+import react.dom.div
+import react.dom.h2
+import react.dom.main
 
 val scope = MainScope()
 
@@ -89,40 +97,46 @@ val App = functionalComponent<RProps> {
 
     when (serviceWorkerState) {
         is ServiceWorkerState.Registered -> {
-            h1 {
-                +"Successfully registered a service worker!"
-            }
-            when (pushManagerState) {
-                is PushManagerState.NotSubscribed -> {
-                    button {
-                        attrs {
-                            onClickFunction = { subscribeUser(pushManagerState.pushManager) }
+
+            fog()
+
+            main("front container") {
+                attrs {
+                    attributes["data-theme"] = "dark"
+                }
+
+                searchArea(jsObject()) {}
+
+                when (pushManagerState) {
+                    is PushManagerState.NotSubscribed -> {
+                        button {
+                            attrs {
+                                onClickFunction = { subscribeUser(pushManagerState.pushManager) }
+                            }
+                            +"Click here to subscribe to push notifications"
                         }
-                        +"Click here to subscribe to push notifications"
                     }
-                }
-                is PushManagerState.Subscribed -> {
-                    h2 {
-                        +"User is subscribed to Push API"
-                    }
-                    button {
-                        attrs {
-                            onClickFunction = { unsubscribeUser(pushManagerState.pushManager) }
+                    is PushManagerState.Subscribed -> {
+                        h2 {
+                            +"User is subscribed to Push API"
                         }
-                        +"Click here to unsubscribe"
+                        button {
+                            attrs {
+                                onClickFunction = { unsubscribeUser(pushManagerState.pushManager) }
+                            }
+                            +"Click here to unsubscribe"
+                        }
                     }
+                    PushManagerState.NotSupported -> h2 {
+                        +"Push API is not supported on this browser"
+                    }
+                    PushManagerState.Loading -> loadingComponent()
                 }
-                PushManagerState.NotSupported -> h2 {
-                    +"Push API is not supported on this browser"
-                }
-                PushManagerState.Loading -> loadingComponent()
             }
         }
-        is ServiceWorkerState.Failed -> h1 {
-            +"Error in registering service worker: ${serviceWorkerState.errorMessage}"
-        }
+        is ServiceWorkerState.Failed -> window.alert("Error in registering service worker: ${serviceWorkerState.errorMessage}")
         ServiceWorkerState.Loading -> loadingComponent()
     }
 }
 
-fun RBuilder.App(props: RProps,handler:RHandler<RProps>) = child(App,props,handler)
+fun RBuilder.App(props: RProps, handler: RHandler<RProps>) = child(App, props, handler)

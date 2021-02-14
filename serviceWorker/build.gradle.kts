@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackOutput.Target
 
 kotlin {
-    js(IR) {
+    js {
         browser {
             binaries.executable()
             webpackTask {
