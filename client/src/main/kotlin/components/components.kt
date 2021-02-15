@@ -16,7 +16,12 @@ fun RBuilder.loadingComponent() = LoadingSpinner {
 
 fun RBuilder.fog() = child(Fog)
 
-fun RBuilder.autocompleteInput(options: Array<String>, onRequestOptions: (String) -> Unit, onSelect: (String) -> Unit) = TextInput {
+fun RBuilder.autocompleteInput(
+    disabled: Boolean,
+    options: Array<String>,
+    onRequestOptions: (String) -> Unit,
+    onSelect: (String) -> Unit
+) = TextInput {
     attrs {
         this.trigger = ""
         this.minChars = 3
@@ -25,6 +30,7 @@ fun RBuilder.autocompleteInput(options: Array<String>, onRequestOptions: (String
         this.onRequestOptions = onRequestOptions
         this.onSelect = onSelect
         this.Component = "input"
+        this.disabled = disabled
     }
 }
 

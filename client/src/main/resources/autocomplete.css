@@ -11,12 +11,14 @@
     position: absolute;
     text-align: left;
     z-index: 20000;
+    margin-top: 1em;
 }
 
 .react-autocomplete-input > li {
     cursor: pointer;
     padding: 10px;
     min-width: 100px;
+    list-style: none;
 }
 
 .react-autocomplete-input > li.active {

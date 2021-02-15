@@ -11,7 +11,7 @@ external val TextInput: RClass<TextInputProps>
 external interface TextInputProps : RProps {
     var Component: String
     var defaultValue: String
-    var disabled: String
+    var disabled: Boolean
     var maxOptions: Int
     var onSelect: (String) -> Unit
     var onRequestOptions: (String) -> Unit
@@ -25,6 +25,6 @@ external interface TextInputProps : RProps {
     var spacer: String
     var trigger: String
     var minChars: Int
-    var value: String
+    var value: String?
     var passThroughEnter: Boolean
 }
