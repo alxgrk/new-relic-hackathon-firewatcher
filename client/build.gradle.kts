@@ -10,6 +10,8 @@ dependencies {
     implementation("org.jetbrains:kotlin-react-dom:16.13.1-pre.110-kotlin-1.4.10")
     implementation(npm("react-loader-spinner", "3.1.14"))
     implementation(npm("react-autocomplete-input", "1.0.15"))
+    implementation(npm("leaflet", "1.7.1"))
+    implementation(npm("react-leaflet", "3.1.0"))
 }
 
 kotlin {

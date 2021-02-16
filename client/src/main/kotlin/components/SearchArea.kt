@@ -1,42 +1,45 @@
 package client.components
 
+import client.network.NominatimAPI
 import client.network.NominatimAPI.fetchPlaces
 import client.network.NominatimResource.Status.*
 import client.scope
-import kotlinx.browser.window
 import kotlinx.coroutines.*
 import kotlinx.css.paddingTop
 import kotlinx.css.pct
-import kotlinx.html.js.onClickFunction
 import react.*
 import react.dom.*
 import styled.css
 import styled.styledDiv
 
 val SearchArea = functionalComponent<RProps> { props ->
-    val (disabled, setDisabled) = useState(false)
-    val (part, setPart) = useState("")
+    val (query, setQuery) = useState("")
+    val (selected, setSelected) = useState<NominatimAPI.Place?>(null)
     val (options, setOptions) = useState(arrayOf<String>())
+    val (places, setPlaces) = useState(arrayOf<NominatimAPI.Place>())
 
-    fun onRequestOptions(part: String) {
+    val onRequestOptions = { part: String ->
         console.log("Part: $part")
         if (part.length >= 3) {
-            setPart(part)
+            setQuery(part)
         }
     }
 
-    fun onSelect(selection: String) {
+    val onSelect = { selection: String ->
         console.log("Selected: $selection")
-        setDisabled(true)
+        setSelected(places.toList().first { selection.startsWith(it.display_name, ignoreCase = true) })
     }
 
-    useEffectWithCleanup(listOf(part)) {
+    useEffectWithCleanup(listOf(query)) {
         val job = scope.launch {
-            val resource = fetchPlaces(part)
+            val resource = fetchPlaces(query)
             when (resource.status) {
                 LOADING -> setOptions(arrayOf()) // TODO
                 ERROR -> setOptions(arrayOf()) // TODO
-                SUCCESS -> setOptions(resource.data.map { it.display_name }.toTypedArray())
+                SUCCESS -> {
+                    setPlaces(resource.data.toTypedArray())
+                    setOptions(resource.data.map { it.display_name }.toTypedArray())
+                }
             }
         }
         return@useEffectWithCleanup {
@@ -47,7 +50,7 @@ val SearchArea = functionalComponent<RProps> { props ->
     styledDiv {
         css {
             "h1" {
-                paddingTop = 20.pct
+                paddingTop = 10.pct
             }
         }
         hGroup {
@@ -59,13 +62,13 @@ val SearchArea = functionalComponent<RProps> { props ->
             }
         }
         autocompleteInput(
-            disabled,
+            selected != null,
             options,
-            onRequestOptions = { onRequestOptions(it) },
-            onSelect = { onSelect(it) }
+            onRequestOptions = onRequestOptions,
+            onSelect = onSelect
         )
-        if (disabled) {
-            
+        if (selected != null) {
+            leaflet(latLng = LatLng(selected.lat.toDouble(), selected.lon.toDouble())) {}
         }
     }
 }

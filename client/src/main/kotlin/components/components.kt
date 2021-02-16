@@ -35,3 +35,37 @@ fun RBuilder.autocompleteInput(
 }
 
 fun RBuilder.searchArea(props: RProps, handler: RHandler<RProps>) = child(SearchArea, props, handler)
+
+fun RBuilder.leaflet(latLng: LatLng, handler: RHandler<LeafletProps>) = child(Leaflet) {
+    attrs {
+        this.latLng = latLng
+    }
+    handler()
+}
+
+fun RBuilder.mapContainer(center: Array<Double>, zoom: Number, handler: RBuilder.() -> Unit) = MapContainer {
+    attrs {
+        this.center = center
+        this.zoom = zoom
+    }
+    handler()
+}
+
+fun RBuilder.tileLayer(attribution: String, url: String, handler: RBuilder.() -> Unit) = TileLayer {
+    attrs {
+        this.attribution = attribution
+        this.url = url
+    }
+    handler()
+}
+
+fun RBuilder.marker(position: Array<Double>, handler: RBuilder.() -> Unit) = Marker {
+    attrs {
+        this.position = position
+    }
+    handler()
+}
+
+fun RBuilder.popup(handler: RBuilder.() -> Unit) = Popup {
+    handler()
+}

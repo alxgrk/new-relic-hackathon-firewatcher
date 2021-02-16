@@ -24,6 +24,12 @@ fun main() {
         "#root" {
             textAlign = TextAlign.center
         }
+        "#mapid" {
+            height = 40.vh
+        }
+        "#mapid div" {
+            height = 100.pct
+        }
         ".front" {
             position = Position.relative
         }
