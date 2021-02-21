@@ -7,8 +7,19 @@ Demo: https://new-relic-hackathon-firewatch.herokuapp.com/
 
 ## Get started
 
+Change to `frontend` directory.
+
 Run app: `./gradlew run`
 
 Run app with hot reload: `./gradlew run --continuous` _*will not hot reload service worker_
 
 Build for production: `./gradlew build`. The bundled files reside in `build/distributions` directory.
+
+Change to `backend` directory.
+
+Run ...
+
+## Used resources
+
+Data:
+ - https://nominatim.org/release-docs/latest/api/Search/
