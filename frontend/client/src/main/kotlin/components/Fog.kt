@@ -17,3 +17,5 @@ val Fog = functionalComponent<RProps> {
         div(classes = "image02") {}
     }
 }
+
+fun RBuilder.fog() = child(Fog)

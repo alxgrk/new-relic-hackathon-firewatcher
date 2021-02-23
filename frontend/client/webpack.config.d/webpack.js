@@ -50,14 +50,14 @@ if (config.mode === "production") { // the build process makes the config object
   selfUrl = dotenv.parsed.SELF_URL
   apiUrl = dotenv.parsed.API_URL
 } else {
-  selfUrl = "localhost:8080"
-  apiUrl = "localhost:8081"
+  selfUrl = "http://localhost:8080/"
+  apiUrl = "http://localhost:8081/"
 }
 
 const definePlugin = new webpack.DefinePlugin(
     {
-      SELF_URL: selfUrl,
-      API_URL: apiUrl
+      SELF_URL: JSON.stringify(selfUrl),
+      API_URL: JSON.stringify(apiUrl)
     }
 )
 

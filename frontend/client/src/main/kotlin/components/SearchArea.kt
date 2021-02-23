@@ -68,7 +68,9 @@ val SearchArea = functionalComponent<RProps> { props ->
             onSelect = onSelect
         )
         if (selected != null) {
-            leaflet(latLng = LatLng(selected.lat.toDouble(), selected.lon.toDouble())) {}
+            leaflet(latLon = LatLon(selected.lat.toDouble(), selected.lon.toDouble())) {}
         }
     }
 }
+
+fun RBuilder.searchArea(props: RProps, handler: RHandler<RProps>) = child(SearchArea, props, handler)

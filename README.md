@@ -17,7 +17,9 @@ Build for production: `./gradlew build`. The bundled files reside in `build/dist
 
 Change to `backend` directory.
 
-Run ...
+Run backend: `./gradlew run`
+
+Run backend with hot reload: `./gradlew build -t` and `./gradlew run -Dio.ktor.development=true`
 
 ## Used resources
 

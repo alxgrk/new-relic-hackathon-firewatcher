@@ -1,9 +1,6 @@
 package client.components
 
 import react.RBuilder
-import react.RHandler
-import react.RProps
-import react.child
 
 fun RBuilder.loadingComponent() = LoadingSpinner {
     attrs {
@@ -13,8 +10,6 @@ fun RBuilder.loadingComponent() = LoadingSpinner {
         width = 10
     }
 }
-
-fun RBuilder.fog() = child(Fog)
 
 fun RBuilder.autocompleteInput(
     disabled: Boolean,
@@ -34,29 +29,23 @@ fun RBuilder.autocompleteInput(
     }
 }
 
-fun RBuilder.searchArea(props: RProps, handler: RHandler<RProps>) = child(SearchArea, props, handler)
-
-fun RBuilder.leaflet(latLng: LatLng, handler: RHandler<LeafletProps>) = child(Leaflet) {
-    attrs {
-        this.latLng = latLng
-    }
-    handler()
-}
-
 fun RBuilder.mapContainer(center: Array<Double>, zoom: Number, handler: RBuilder.() -> Unit) = MapContainer {
     attrs {
         this.center = center
         this.zoom = zoom
+        this.minZoom = 7
+        this.maxZoom = 18
+        this.attributionControl = false
+        this.zoomControl = false
     }
     handler()
 }
 
-fun RBuilder.tileLayer(attribution: String, url: String, handler: RBuilder.() -> Unit) = TileLayer {
+fun RBuilder.tileLayer(attribution: String, url: String) = TileLayer {
     attrs {
         this.attribution = attribution
         this.url = url
     }
-    handler()
 }
 
 fun RBuilder.marker(position: Array<Double>, handler: RBuilder.() -> Unit) = Marker {

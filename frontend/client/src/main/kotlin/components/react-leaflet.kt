@@ -11,6 +11,10 @@ external val MapContainer: RClass<MapContainerProps>
 external interface MapContainerProps : RProps {
     var center: Array<Double>
     var zoom: Number
+    var minZoom: Number
+    var maxZoom: Number
+    var attributionControl: Boolean
+    var zoomControl: Boolean
 }
 
 external val TileLayer: RClass<TileLayerProps>
@@ -27,3 +31,5 @@ external interface MarkerProps : RProps {
 }
 
 external val Popup: RClass<RProps>
+
+external fun useMap(): Map

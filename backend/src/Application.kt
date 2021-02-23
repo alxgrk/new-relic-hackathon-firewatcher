@@ -45,7 +45,7 @@ fun Application.module(testing: Boolean = false) {
         method(HttpMethod.Patch)
         header(HttpHeaders.Authorization)
         allowCredentials = true
-        host("localhost")
+        host("localhost:8080")
     }
 
     install(DefaultHeaders) {
@@ -60,9 +60,9 @@ fun Application.module(testing: Boolean = false) {
 
     routing {
         get("/active-fires") {
-            val minRadiusKm = call.request.queryParameters["minRadiusKm"]?.toInt() ?: 0
-            val maxRadiusKm = call.request.queryParameters["maxRadiusKm"]?.toInt() ?: 50
-            require(minRadiusKm in 0..maxRadiusKm) { "minRadiusKm must be larger than 0, but not larger than maxRadiusKm" }
+            val minRadiusKm = call.request.queryParameters["minRadiusKm"]?.toDouble() ?: 0.0
+            val maxRadiusKm = call.request.queryParameters["maxRadiusKm"]?.toDouble() ?: 50.0
+            require(minRadiusKm in 0.0..maxRadiusKm) { "minRadiusKm must be larger than 0, but not larger than maxRadiusKm" }
 
             val lat = call.request.queryParameters["lat"]!!.toBigDecimal()
             val lon = call.request.queryParameters["lon"]!!.toBigDecimal()
