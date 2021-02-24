@@ -28,6 +28,7 @@ external val Marker: RClass<MarkerProps>
 
 external interface MarkerProps : RProps {
     var position: Array<Double>
+    var icon: Icon
 }
 
 external val Popup: RClass<RProps>

@@ -35,8 +35,8 @@ fun RBuilder.mapContainer(center: Array<Double>, zoom: Number, handler: RBuilder
         this.zoom = zoom
         this.minZoom = 7
         this.maxZoom = 18
-        this.attributionControl = false
-        this.zoomControl = false
+        this.attributionControl = true
+        this.zoomControl = true
     }
     handler()
 }
@@ -48,9 +48,10 @@ fun RBuilder.tileLayer(attribution: String, url: String) = TileLayer {
     }
 }
 
-fun RBuilder.marker(position: Array<Double>, handler: RBuilder.() -> Unit) = Marker {
+fun RBuilder.marker(position: Array<Double>, icon: Icon? = null, handler: RBuilder.() -> Unit) = Marker {
     attrs {
         this.position = position
+        if (icon != null) this.icon = icon
     }
     handler()
 }

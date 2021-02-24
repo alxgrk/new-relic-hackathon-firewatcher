@@ -27,7 +27,7 @@ fun main() {
         "#mapid" {
             height = 40.vh
         }
-        "#mapid div" {
+        "#mapid>div" {
             height = 100.pct
         }
         ".front" {

@@ -12,6 +12,7 @@ import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import org.slf4j.event.Level
+import java.math.RoundingMode
 
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 
@@ -84,7 +85,7 @@ fun Application.module(testing: Boolean = false) {
                             ref.coordinate.latitude.toDouble(),
                             ref.coordinate.longitude.toDouble(),
                             c,
-                            ref.haversinDistanceInKm.toDouble()
+                            ref.haversinDistanceInKm.setScale(3, RoundingMode.HALF_UP).toDouble()
                         )
                     }
             )

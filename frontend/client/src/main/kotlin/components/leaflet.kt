@@ -19,3 +19,11 @@ external class LatLng {
     val lng: Number
     fun distanceTo(otherLatLng: LatLng): Number
 }
+
+external interface IconOptions {
+    var iconUrl: String
+}
+
+external class Icon
+
+external fun icon(options: IconOptions): Icon

@@ -4,17 +4,25 @@ import client.network.FireDataAPI.fetchFireData
 import client.network.FireDataResource
 import client.network.FireMarker
 import client.scope
+import kotlinext.js.jsObject
 import kotlinx.coroutines.launch
+import kotlinx.css.border
+import kotlinx.css.padding
 import react.*
-import react.dom.div
+import react.dom.article
+import react.dom.footer
+import styled.css
+import styled.styledDiv
 
 data class LatLon(val lat: Double, val lng: Double) {
-    fun toArray() = arrayOf(lat, lng)
+    fun toArray() = arrayOf(lat.round(5), lng.round(5))
 }
 
 interface LeafletProps : RProps {
     var latLon: LatLon
 }
+
+fun Double.round(decimals: Int = 3): Double = this.asDynamic().toFixed(decimals).toString().toDouble()
 
 val Leaflet = functionalComponent<LeafletProps> { props ->
     val (center, setCenter) = useState(props.latLon)
@@ -34,8 +42,14 @@ val Leaflet = functionalComponent<LeafletProps> { props ->
         }
     }
 
-    div {
+    styledDiv {
         attrs.attributes["id"] = "mapid"
+        css {
+            ".leaflet-bar a" {
+                padding = "0"
+                border = "none"
+            }
+        }
 
         mapContainer(center = center.toArray(), zoom = 13) {
             tileLayer(
@@ -51,19 +65,36 @@ val Leaflet = functionalComponent<LeafletProps> { props ->
                 }
             }
             fireMarkers.forEach {
-                marker(position = arrayOf(it.latitude, it.longitude)) {
+                marker(
+                    position = arrayOf(it.latitude.round(5), it.longitude.round(5)),
+                    icon = icon(
+                        jsObject {
+                            iconUrl = "fire-marker.png"
+                        }
+                    )
+                ) {
                     popup {
-                        +"Distance: ${it.distanceInKilometer}, Confidence: ${it.confidenceLevel}"
+                        +"Distance: ${it.distanceInKilometer.round()}, Confidence: ${it.confidenceLevel}"
                     }
                 }
+            }
+        }
+        article {
+            val closest = fireMarkers.firstOrNull()
+            if (closest != null) {
+                +"The closest fire is ${closest.distanceInKilometer.round()}km away (${closest.latitude.round(5)},${closest.longitude.round(5)})."
+            } else {
+                +"No fires nearby."
+            }
+            footer {
+                +"Subscribe to updates on new fires closer than ${maxRadius}km around your location (${center.lat.round()},${center.lng.round()})"
             }
         }
     }
 }
 
-fun RBuilder.leaflet(latLon: LatLon, handler: RHandler<LeafletProps>) = child(Leaflet) {
+fun RBuilder.leaflet(latLon: LatLon) = child(Leaflet) {
     attrs {
         this.latLon = latLon
     }
-    handler()
 }

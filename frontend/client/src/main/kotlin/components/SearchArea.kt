@@ -68,7 +68,7 @@ val SearchArea = functionalComponent<RProps> { props ->
             onSelect = onSelect
         )
         if (selected != null) {
-            leaflet(latLon = LatLon(selected.lat.toDouble(), selected.lon.toDouble())) {}
+            leaflet(latLon = LatLon(selected.lat.toDouble(), selected.lon.toDouble()))
         }
     }
 }
