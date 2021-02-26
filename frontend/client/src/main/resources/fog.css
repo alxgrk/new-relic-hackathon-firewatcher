@@ -4,6 +4,7 @@
     height: 100%;
     position: absolute;
     width: 200%;
+    overflow-y: hidden;
 }
 .fogLayerOne .image01, .fogLayerOne .image02,
 .fogLayerTwo .image01, .fogLayerTwo .image02,

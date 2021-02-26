@@ -12,12 +12,15 @@ fun RBuilder.loadingComponent() = LoadingSpinner {
 }
 
 fun RBuilder.autocompleteInput(
+    value: String?,
     disabled: Boolean,
     options: Array<String>,
     onRequestOptions: (String) -> Unit,
     onSelect: (String) -> Unit
 ) = TextInput {
     attrs {
+        if (value != null)
+            this.value = value
         this.trigger = ""
         this.minChars = 3
         this.options = options
@@ -29,12 +32,17 @@ fun RBuilder.autocompleteInput(
     }
 }
 
-fun RBuilder.mapContainer(center: Array<Double>, zoom: Number, handler: RBuilder.() -> Unit) = MapContainer {
+fun RBuilder.mapContainer(
+    center: Array<Double>,
+    zoom: Number,
+    mapLocked: Boolean,
+    handler: RBuilder.() -> Unit
+) = MapContainer {
     attrs {
         this.center = center
         this.zoom = zoom
         this.minZoom = 7
-        this.maxZoom = 18
+        this.maxZoom = 16
         this.attributionControl = true
         this.zoomControl = true
     }

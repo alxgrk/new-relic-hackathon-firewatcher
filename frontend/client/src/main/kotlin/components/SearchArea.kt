@@ -1,20 +1,30 @@
 package client.components
 
+import client.PushManagerState
 import client.network.NominatimAPI
 import client.network.NominatimAPI.fetchPlaces
 import client.network.NominatimResource.Status.*
+import client.persistence.useLocalStorage
 import client.scope
 import kotlinx.coroutines.*
 import kotlinx.css.paddingTop
 import kotlinx.css.pct
+import kotlinx.html.js.onClickFunction
 import react.*
 import react.dom.*
 import styled.css
 import styled.styledDiv
 
-val SearchArea = functionalComponent<RProps> { props ->
+interface SearchAreaProps : RProps {
+    var pushManagerState: PushManagerState
+    var onSubscribe: (PushManagerState.NotSubscribed) -> Unit
+    var onUnsubscribe: (PushManagerState.Subscribed) -> Unit
+}
+
+val SearchArea = functionalComponent<SearchAreaProps> { props ->
     val (query, setQuery) = useState("")
-    val (selected, setSelected) = useState<NominatimAPI.Place?>(null)
+    val (shouldClear, setShouldClear) = useState(false)
+    val (selected, setSelected) = useLocalStorage<NominatimAPI.Place?>("searcharea-selected", null)
     val (options, setOptions) = useState(arrayOf<String>())
     val (places, setPlaces) = useState(arrayOf<NominatimAPI.Place>())
 
@@ -50,7 +60,7 @@ val SearchArea = functionalComponent<RProps> { props ->
     styledDiv {
         css {
             "h1" {
-                paddingTop = 10.pct
+                paddingTop = 5.pct
             }
         }
         hGroup {
@@ -61,16 +71,55 @@ val SearchArea = functionalComponent<RProps> { props ->
                 +"Better be warned when it gets hot nearby."
             }
         }
-        autocompleteInput(
-            selected != null,
-            options,
-            onRequestOptions = onRequestOptions,
-            onSelect = onSelect
-        )
+        div("grid") {
+            autocompleteInput(
+                value = selected?.display_name,
+                disabled = selected != null,
+                options = options,
+                onRequestOptions = onRequestOptions,
+                onSelect = onSelect
+            )
+            if (selected != null) {
+                a(classes = "button") {
+                    attrs {
+                        onClickFunction = {
+                            setQuery("")
+                            setShouldClear(true)
+                            setSelected(null)
+                            setOptions(arrayOf())
+                            setPlaces(arrayOf())
+                            (props.pushManagerState as? PushManagerState.Subscribed)?.let {
+                                props.onUnsubscribe(it)
+                            }
+                        }
+                    }
+                    +"Clear"
+                }
+            } else {
+                if (shouldClear)
+                    setShouldClear(false)
+            }
+        }
         if (selected != null) {
-            leaflet(latLon = LatLon(selected.lat.toDouble(), selected.lon.toDouble()))
+            leaflet(
+                props.pushManagerState,
+                props.onSubscribe,
+                props.onUnsubscribe,
+                shouldClear,
+                latLon = LatLon(selected.lat.toDouble(), selected.lon.toDouble())
+            )
         }
     }
 }
 
-fun RBuilder.searchArea(props: RProps, handler: RHandler<RProps>) = child(SearchArea, props, handler)
+fun RBuilder.searchArea(
+    pushManagerState: PushManagerState,
+    onSubscribe: (PushManagerState.NotSubscribed) -> Unit,
+    onUnsubscribe: (PushManagerState.Subscribed) -> Unit
+) = child(SearchArea) {
+    attrs {
+        this.pushManagerState = pushManagerState
+        this.onSubscribe = onSubscribe
+        this.onUnsubscribe = onUnsubscribe
+    }
+}

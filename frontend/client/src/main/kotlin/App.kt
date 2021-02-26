@@ -3,16 +3,11 @@ package client
 import client.components.fog
 import client.components.loadingComponent
 import client.components.searchArea
-import kotlinext.js.jsObject
 import kotlinx.browser.window
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.await
 import kotlinx.coroutines.launch
-import kotlinx.html.js.onClickFunction
 import react.*
-import react.dom.button
-import react.dom.div
-import react.dom.h2
 import react.dom.main
 
 val scope = MainScope()
@@ -105,33 +100,11 @@ val App = functionalComponent<RProps> {
                     attributes["data-theme"] = "dark"
                 }
 
-                searchArea(jsObject()) {}
-
-                when (pushManagerState) {
-                    is PushManagerState.NotSubscribed -> {
-                        button {
-                            attrs {
-                                onClickFunction = { subscribeUser(pushManagerState.pushManager) }
-                            }
-                            +"Click here to subscribe to push notifications"
-                        }
-                    }
-                    is PushManagerState.Subscribed -> {
-                        h2 {
-                            +"User is subscribed to Push API"
-                        }
-                        button {
-                            attrs {
-                                onClickFunction = { unsubscribeUser(pushManagerState.pushManager) }
-                            }
-                            +"Click here to unsubscribe"
-                        }
-                    }
-                    PushManagerState.NotSupported -> h2 {
-                        +"Push API is not supported on this browser"
-                    }
-                    PushManagerState.Loading -> loadingComponent()
-                }
+                searchArea(
+                    pushManagerState,
+                    { subscribeUser(it.pushManager) },
+                    { unsubscribeUser(it.pushManager) }
+                )
             }
         }
         is ServiceWorkerState.Failed -> window.alert("Error in registering service worker: ${serviceWorkerState.errorMessage}")
