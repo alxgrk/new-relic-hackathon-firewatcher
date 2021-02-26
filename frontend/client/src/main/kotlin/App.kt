@@ -3,10 +3,15 @@ package client
 import client.components.fog
 import client.components.loadingComponent
 import client.components.searchArea
+import client.network.PushNotificationAPI
+import client.network.PushNotificationAPI.registerPushNotification
+import client.network.PushNotificationAPI.unregisterPushNotification
 import kotlinx.browser.window
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.await
 import kotlinx.coroutines.launch
+import org.khronos.webgl.Uint8Array
+import org.khronos.webgl.set
 import react.*
 import react.dom.main
 
@@ -60,13 +65,13 @@ val App = functionalComponent<RProps> {
 
     fun subscribeUser(pushManager: PushManager) = scope.launch {
         try {
-            // use your own VAPID public key
-            val publicKey = "BLceSSynHW5gDWDz-SK5mmQgUSAOzs_yXMPtDO0AmNsRjUllTZsdmDU4_gKvTr_q1hA8ZX19xLbGe28Bkyvwm3E"
-            pushManager.subscribe(
+            val publicKey = urlBase64ToUint8Array("BL9pmkZIZqcl3vDmdwvR7wvBSZvxxsHrBLbrPkZgC7BXguEtHAAVaW2ukBGxN6l9B925UzG8lcrn1vGHWRBmt2k=")
+            val subscription = pushManager.subscribe(
                 PushSubscriptionOptions(userVisibleOnly = true, applicationServerKey = publicKey)
             ).await()
 
             // send subscription to server
+            registerPushNotification(subscription)
 
             setPushManagerState(PushManagerState.Subscribed(pushManager))
             console.log("User subscribed")
@@ -80,7 +85,11 @@ val App = functionalComponent<RProps> {
             val subscription = pushManager.getSubscription().await()
             if (subscription != null) {
                 try {
+                    // send subscription to server
+                    unregisterPushNotification(subscription)
+
                     subscription.unsubscribe().await()
+
                     setPushManagerState(PushManagerState.NotSubscribed(pushManager))
                     console.log("User unsubscribed")
                 } catch (e: Exception) {
@@ -113,3 +122,19 @@ val App = functionalComponent<RProps> {
 }
 
 fun RBuilder.App(props: RProps, handler: RHandler<RProps>) = child(App, props, handler)
+
+fun urlBase64ToUint8Array(base64String: String): Uint8Array {
+    val padding = "=".repeat((4 - base64String.length % 4) % 4)
+    val base64 = (base64String + padding)
+        .replace("-", "+")
+        .replace("_", "/")
+
+    val rawData = window.atob(base64)
+    val outArray = Uint8Array(rawData.length)
+
+    for (i in 0..rawData.length) {
+        outArray[i] = rawData.asDynamic().charCodeAt(i)
+    }
+    return outArray
+}
+

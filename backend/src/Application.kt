@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import de.alxgrk.input.ActiveFireScheduler
 import de.alxgrk.input.ActiveFires
 import de.alxgrk.input.Sources
+import de.alxgrk.push.SubscriptionManager
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
@@ -11,7 +12,11 @@ import io.ktor.jackson.*
 import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.slf4j.event.Level
+import push.PushSubscription
 import java.math.RoundingMode
 
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
@@ -44,6 +49,7 @@ fun Application.module(testing: Boolean = false) {
         method(HttpMethod.Put)
         method(HttpMethod.Delete)
         method(HttpMethod.Patch)
+        header(HttpHeaders.ContentType)
         header(HttpHeaders.Authorization)
         allowCredentials = true
         host("localhost:8080")
@@ -60,6 +66,29 @@ fun Application.module(testing: Boolean = false) {
     }
 
     routing {
+
+        post("register-push") {
+            val subscription = call.receive<PushSubscription>()
+
+            with(SubscriptionManager) {
+                store(subscription)
+                GlobalScope.launch {
+                    delay(5000)
+                    sendPushMessage(subscription, "Test Notification".toByteArray(Charsets.UTF_8))
+                }
+            }
+
+            call.respond(HttpStatusCode.OK, "")
+        }
+
+        post("unregister-push") {
+            val subscription = call.receive<PushSubscription>()
+
+            SubscriptionManager.remove(subscription)
+
+            call.respond(HttpStatusCode.OK, "")
+        }
+
         get("/active-fires") {
             val minRadiusKm = call.request.queryParameters["minRadiusKm"]?.toDouble() ?: 0.0
             val maxRadiusKm = call.request.queryParameters["maxRadiusKm"]?.toDouble() ?: 50.0

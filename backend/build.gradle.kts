@@ -31,6 +31,8 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("com.google.guava:guava:30.1-jre")
     implementation("org.apache.lucene:lucene-core:8.8.0")
+    implementation("nl.martijndwars:web-push:5.1.1")
+    implementation("org.bouncycastle:bcprov-jdk15on:1.68")
 
     testImplementation("io.ktor:ktor-server-tests:$ktor_version")
 }
