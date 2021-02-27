@@ -16,6 +16,13 @@ jobs:
       - name: Fetch Sources
         uses: actions/checkout@v2
 
+      - name: Make envfile
+        uses: SpicyPizza/create-envfile@v1
+        with:
+          envkey_SELF_URL: https://alxgrk.github.io/new-relic-hackathon-firewatcher/
+          envkey_API_URL: https://firewatcher-backend.herokuapp.com/
+          directory: frontend
+
       # Build application
       - name: Build
         run: cd frontend/ && ./gradlew build
