@@ -4,14 +4,18 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import de.alxgrk.input.ActiveFireScheduler
 import de.alxgrk.input.ActiveFires
 import de.alxgrk.input.Sources
+import de.alxgrk.monitoring.NewRelic
+import de.alxgrk.monitoring.NewRelic.createGlobalRegistry
 import de.alxgrk.push.SubscriptionManager
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
 import io.ktor.jackson.*
+import io.ktor.metrics.micrometer.*
 import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
+import io.micrometer.core.instrument.distribution.DistributionStatisticConfig
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -25,6 +29,7 @@ fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 @kotlin.jvm.JvmOverloads
 fun Application.module(testing: Boolean = false) {
 
+    createGlobalRegistry()
     ActiveFireScheduler().scheduleAcquisition()
 
     install(Compression) {
@@ -63,6 +68,13 @@ fun Application.module(testing: Boolean = false) {
         jackson {
             enable(SerializationFeature.INDENT_OUTPUT)
         }
+    }
+
+    install(MicrometerMetrics) {
+        registry = NewRelic.registry
+        distributionStatisticConfig = DistributionStatisticConfig.Builder()
+            .percentilesHistogram(true)
+            .build()
     }
 
     routing {
