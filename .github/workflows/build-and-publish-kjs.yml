@@ -21,7 +21,7 @@ jobs:
     #    with:
       #    envkey_SELF_URL: https://alxgrk.github.io/new-relic-hackathon-firewatcher/
      #     envkey_API_URL: https://firewatcher-backend.herokuapp.com/
-          directory: frontend
+     #     directory: frontend
 
       # Build application
       - name: Build
