@@ -30,3 +30,4 @@ Run backend with hot reload: `./gradlew build -t` and `./gradlew run -Dio.ktor.d
 
 Data:
  - https://nominatim.org/release-docs/latest/api/Search/
+ - https://firms.modaps.eosdis.nasa.gov/active_fire/#firms-txt
