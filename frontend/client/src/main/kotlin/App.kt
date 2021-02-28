@@ -24,7 +24,8 @@ val App = functionalComponent<RProps> {
 
     suspend fun loadServiceWorkerState() {
         try {
-            val swRegistration = window.navigator.serviceWorker.register("./serviceWorker.js").await()
+            val prefix = if (js("MODE").toString() == "PROD") "." else ""
+            val swRegistration = window.navigator.serviceWorker.register("$prefix/serviceWorker.js").await()
             console.log("Successfully registered a service worker.", swRegistration)
             setServiceWorkerState(ServiceWorkerState.Registered(swRegistration = swRegistration))
         } catch (e: Exception) {

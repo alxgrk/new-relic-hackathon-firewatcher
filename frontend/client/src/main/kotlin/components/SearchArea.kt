@@ -6,6 +6,7 @@ import client.network.NominatimAPI.fetchPlaces
 import client.network.NominatimResource.Status.*
 import client.persistence.useLocalStorage
 import client.scope
+import kotlinx.browser.window
 import kotlinx.coroutines.*
 import kotlinx.css.paddingTop
 import kotlinx.css.pct
@@ -85,7 +86,13 @@ val SearchArea = functionalComponent<SearchAreaProps> { props ->
                         onClickFunction = {
                             setQuery("")
                             setShouldClear(true)
-                            setSelected(null)
+                            window.setTimeout(
+                                {
+                                    setShouldClear(false)
+                                    setSelected(null)
+                                },
+                                500
+                            )
                             setOptions(arrayOf())
                             setPlaces(arrayOf())
                             (props.pushManagerState as? PushManagerState.Subscribed)?.let {
@@ -95,9 +102,6 @@ val SearchArea = functionalComponent<SearchAreaProps> { props ->
                     }
                     +"Clear"
                 }
-            } else {
-                if (shouldClear)
-                    setShouldClear(false)
             }
         }
         if (selected != null) {

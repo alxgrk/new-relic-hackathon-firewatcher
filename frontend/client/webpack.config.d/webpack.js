@@ -44,20 +44,23 @@ config.plugins.push(new KvWebpackPlugin())
 
 // define env vars dependending on mode
 
-var selfUrl, apiUrl
+var selfUrl, apiUrl, mode
 
 if (config.mode === "production") { // the build process makes the config object available
   selfUrl = process.env.SELF_URL || dotenv.parsed.SELF_URL
   apiUrl = process.env.API_URL || dotenv.parsed.API_URL
+  mode = "PROD"
 } else {
   selfUrl = "http://localhost:8080/"
   apiUrl = "http://localhost:8081/"
+  mode = "DEV"
 }
 
 const definePlugin = new webpack.DefinePlugin(
     {
       SELF_URL: JSON.stringify(selfUrl),
-      API_URL: JSON.stringify(apiUrl)
+      API_URL: JSON.stringify(apiUrl),
+      MODE: JSON.stringify(mode)
     }
 )
 
