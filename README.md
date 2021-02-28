@@ -5,7 +5,8 @@ This project is a contribution to the New Relic Hackathon.
 
 ### Demo: 
 
-Frontend: https://new-relic-hackathon-firewatch.herokuapp.com/
+Frontend: https://alxgrk.github.io/new-relic-hackathon-firewatcher/
+
 Backend: https://firewatcher-backend.herokuapp.com/
 
 
