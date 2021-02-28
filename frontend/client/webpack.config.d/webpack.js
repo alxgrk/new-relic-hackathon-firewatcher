@@ -47,8 +47,8 @@ config.plugins.push(new KvWebpackPlugin())
 var selfUrl, apiUrl
 
 if (config.mode === "production") { // the build process makes the config object available
-  selfUrl = dotenv.parsed.SELF_URL
-  apiUrl = dotenv.parsed.API_URL
+  selfUrl = process.env.SELF_URL || dotenv.parsed.SELF_URL
+  apiUrl = process.env.API_URL || dotenv.parsed.API_URL
 } else {
   selfUrl = "http://localhost:8080/"
   apiUrl = "http://localhost:8081/"
