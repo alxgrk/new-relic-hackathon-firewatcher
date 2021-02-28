@@ -58,7 +58,7 @@ fun Application.module(testing: Boolean = false) {
         header(HttpHeaders.Authorization)
         allowCredentials = true
         host("localhost:8080")
-        host("alxgrk.github.io")
+        host("alxgrk.github.io", schemes = listOf("https"))
     }
 
     install(DefaultHeaders) {
