@@ -1,9 +1,9 @@
 package client
 
+import client.components.LatLon
 import client.components.fog
 import client.components.loadingComponent
 import client.components.searchArea
-import client.network.PushNotificationAPI
 import client.network.PushNotificationAPI.registerPushNotification
 import client.network.PushNotificationAPI.unregisterPushNotification
 import kotlinx.browser.window
@@ -64,7 +64,7 @@ val App = functionalComponent<RProps> {
         }
     }
 
-    fun subscribeUser(pushManager: PushManager) = scope.launch {
+    fun subscribeUser(pushManager: PushManager, latLon: LatLon, maxRadius: Double) = scope.launch {
         try {
             val publicKey = urlBase64ToUint8Array("BL9pmkZIZqcl3vDmdwvR7wvBSZvxxsHrBLbrPkZgC7BXguEtHAAVaW2ukBGxN6l9B925UzG8lcrn1vGHWRBmt2k=")
             val subscription = pushManager.subscribe(
@@ -72,7 +72,7 @@ val App = functionalComponent<RProps> {
             ).await()
 
             // send subscription to server
-            registerPushNotification(subscription)
+            registerPushNotification(subscription, latLon, maxRadius)
 
             setPushManagerState(PushManagerState.Subscribed(pushManager))
             console.log("User subscribed")
@@ -112,7 +112,7 @@ val App = functionalComponent<RProps> {
 
                 searchArea(
                     pushManagerState,
-                    { subscribeUser(it.pushManager) },
+                    { it, center, maxRadius -> subscribeUser(it.pushManager, center, maxRadius) },
                     { unsubscribeUser(it.pushManager) }
                 )
             }

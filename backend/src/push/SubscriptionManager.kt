@@ -1,5 +1,8 @@
 package de.alxgrk.push
 
+import de.alxgrk.input.Sources
+import de.alxgrk.monitoring.NewRelic
+import de.alxgrk.persistence.PushSubscriptionRepo
 import io.ktor.application.*
 import mu.KotlinLogging
 import nl.martijndwars.webpush.Notification
@@ -11,10 +14,13 @@ private val logger = KotlinLogging.logger {}
 
 object SubscriptionManager {
 
-    private val subscriptions = mutableListOf<PushSubscription>()
+    private val subscriptions = PushSubscriptionRepo()
 
-    fun store(subscription: PushSubscription) {
-        subscriptions.add(subscription)
+    private val notificationsSent = NewRelic.registry.counter("notificationsSent")
+    private val notificationsFailed = NewRelic.registry.counter("notificationsFailed")
+
+    fun store(subscription: PushSubscription, coordinate: Sources.Coordinate, maxRadiusKm: Double) {
+        subscriptions.create(subscription, coordinate, maxRadiusKm)
     }
 
     fun remove(subscription: PushSubscription) {
@@ -43,9 +49,11 @@ object SubscriptionManager {
         // Send the notification
         val response = pushService.send(notification)!!
         if (response.statusLine.statusCode != 201) {
+            notificationsFailed.increment()
             throw RuntimeException(response.toString())
         }
 
+        notificationsSent.increment()
         logger.info { "Successfully sent notification to endpoint ${sub.endpoint}" }
     }
 }

@@ -1,9 +1,9 @@
 package client.network
 
 import client.PushSubscription
+import client.components.LatLon
 import kotlinext.js.jsObject
 import kotlinx.browser.window
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.await
 import org.w3c.fetch.RequestInit
 import kotlin.js.json
@@ -25,9 +25,13 @@ abstract class PushNotificationResource(val status: Status, val message: String?
 
 object PushNotificationAPI {
 
-    suspend fun registerPushNotification(subscription: PushSubscription) =
+    suspend fun registerPushNotification(subscription: PushSubscription, latLon: LatLon, maxRadius: Double) =
         try {
-            send("register-push", subscription)
+            send(
+                "register-push",
+                subscription,
+                mapOf("lat" to latLon.lat, "lon" to latLon.lng, "maxRadius" to maxRadius)
+            )
             PushNotificationResource.Success
         } catch (e: Exception) {
             PushNotificationResource.Error(e.message ?: "unknown fetching error")
@@ -35,15 +39,22 @@ object PushNotificationAPI {
 
     suspend fun unregisterPushNotification(subscription: PushSubscription) =
         try {
-            send("unregister-push", subscription)
+            send(
+                "unregister-push",
+                subscription,
+                mapOf()
+            )
             PushNotificationResource.Success
         } catch (e: Exception) {
             PushNotificationResource.Error(e.message ?: "unknown fetching error")
         }
 
-    private suspend fun send(path: String, subscription: PushSubscription) {
+    private suspend fun send(path: String, subscription: PushSubscription, queryParams: Map<String, Double>) {
         val apiUrl = js("API_URL").toString()
-        val url = "${apiUrl}$path"
+        val queryParamsAsString = if (queryParams.isEmpty())
+            "" else
+            queryParams.entries.joinToString(separator = "&", prefix = "?") { "${it.key}=${it.value}" }
+        val url = "${apiUrl}$path$queryParamsAsString"
         val config = jsObject<RequestInit> {
             method = "post"
             headers = json("Content-Type" to "application/json")

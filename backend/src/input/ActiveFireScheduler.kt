@@ -1,11 +1,16 @@
 package de.alxgrk.input
 
+import com.oripwk.micrometer.kotlin.coTimer
 import de.alxgrk.input.Sources.Companion.parse
+import de.alxgrk.monitoring.NewRelic
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.http.*
 import io.ktor.utils.io.*
+import io.micrometer.core.instrument.ImmutableTag
+import io.micrometer.core.instrument.Metrics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
@@ -14,9 +19,11 @@ import mu.KotlinLogging
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
+import kotlin.time.ExperimentalTime
 
 private val logger = KotlinLogging.logger {}
 
+@ExperimentalTime
 class ActiveFireScheduler(
     private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
 ) : AutoCloseable {
@@ -26,53 +33,68 @@ class ActiveFireScheduler(
     }
 
     private fun fetchCsvData() {
-        logger.info { "Running scheduled active fire acquisition." }
+        NewRelic.registry.timer("fetchCsvData").record {
+            logger.info { "Running scheduled active fire acquisition." }
 
-        try {
-            // we are on a thread from executor
-            HttpClient(CIO).use { client ->
-                runBlocking(Dispatchers.IO) {
-                    supervisorScope {
-                        val fires = Sources.values()
-                            .map { source ->
-                                async {
-                                    val channel = client.get<HttpResponse>(source.url).content
-                                    val entries = mutableListOf<Pair<Sources.Coordinate, Sources.ConfidenceLevel>>()
-                                    while (!channel.isClosedForRead) {
-                                        val line = channel.readUTF8Line() ?: break
-                                        if (line.startsWith("lat"))
-                                            continue
+            try {
+                // we are on a thread from executor
+                HttpClient(CIO).use { client ->
+                    runBlocking(Dispatchers.IO) {
+                        supervisorScope {
+                            val fires = Sources.values()
+                                .map { source ->
+                                    async {
+                                        val response = client.get<HttpResponse>(source.url)
+                                        NewRelic.registry.gauge(
+                                            "sourceSize",
+                                            listOf(ImmutableTag("source", source.name)),
+                                            response.contentLength() ?: -1
+                                        )
 
-                                        entries += parse(line)
+                                        val channel = response.content
+                                        val entries = mutableListOf<Pair<Sources.Coordinate, Pair<Sources, Sources.ConfidenceLevel>>>()
+
+                                        NewRelic.registry.coTimer("parsingTime", "source", source.name).record {
+                                            while (!channel.isClosedForRead) {
+                                                val line = channel.readUTF8Line() ?: break
+                                                if (line.startsWith("lat"))
+                                                    continue
+
+                                                val (coord, confidenceLevel) = parse(line)
+                                                entries += coord to (source to confidenceLevel)
+                                            }
+                                        }
+                                        entries
                                     }
-                                    entries
                                 }
-                            }
-                            .map {
-                                try {
-                                    it.await()
-                                } catch (e: Exception) {
-                                    logger.error(e) { "Couldn't retrieve CSV data for one source - continuing." }
-                                    listOf()
+                                .mapNotNull {
+                                    try {
+                                        it.await()
+                                    } catch (e: Exception) {
+                                        logger.error(e) { "Couldn't retrieve CSV data for one source - continuing." }
+                                        null
+                                    }
                                 }
-                            }
-                            .flatten()
-                            .toMap()
+                                .flatten()
+                                .toMap()
 
-                        if (fires.isEmpty())
-                            throw RuntimeException("No source was reachable, so now fire data could be provided.")
+                            Metrics.gauge("onlineSources", fires.size)
 
-                        ActiveFires.store(fires)
+                            if (fires.isEmpty())
+                                throw RuntimeException("No source was reachable, so now fire data could be provided.")
+
+                            ActiveFires.store(fires)
+                        }
                     }
                 }
+            } catch (e: Exception) {
+                logger.error(e) { "Couldn't retrieve CSV data - will try it again in 5 minutes." }
+                Thread.sleep(5 * 60 * 1000)
+                fetchCsvData()
             }
-        } catch (e: Exception) {
-            logger.error(e) { "Couldn't retrieve CSV data - will try it again in 5 minutes." }
-            Thread.sleep(5 * 60 * 1000)
-            fetchCsvData()
-        }
 
-        logger.info { "Finished acquiring fire data: ${ActiveFires.size()} fires in total." }
+            logger.info { "Finished acquiring fire data: ${ActiveFires.size()} fires in total." }
+        }
     }
 
     override fun close() {

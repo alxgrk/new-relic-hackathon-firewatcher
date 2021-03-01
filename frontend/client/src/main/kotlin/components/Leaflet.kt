@@ -24,7 +24,7 @@ data class LatLon(val lat: Double, val lng: Double) {
 
 interface LeafletProps : RProps {
     var pushManagerState: PushManagerState
-    var onSubscribe: (PushManagerState.NotSubscribed) -> Unit
+    var onSubscribe: (PushManagerState.NotSubscribed, LatLon, Double) -> Unit
     var onUnsubscribe: (PushManagerState.Subscribed) -> Unit
     var shouldClear: Boolean
     var latLon: LatLon
@@ -131,7 +131,7 @@ val Leaflet = functionalComponent<LeafletProps> { props ->
                         attrs {
                             onClickFunction = {
                                 setMapLocked(true)
-                                props.onSubscribe(props.pushManagerState as PushManagerState.NotSubscribed)
+                                props.onSubscribe(props.pushManagerState as PushManagerState.NotSubscribed, center, maxRadius)
                             }
                         }
                         +"Subscribe"
@@ -165,7 +165,7 @@ val Leaflet = functionalComponent<LeafletProps> { props ->
 
 fun RBuilder.leaflet(
     pushManagerState: PushManagerState,
-    onSubscribe: (PushManagerState.NotSubscribed) -> Unit,
+    onSubscribe: (PushManagerState.NotSubscribed, LatLon, Double) -> Unit,
     onUnsubscribe: (PushManagerState.Subscribed) -> Unit,
     shouldClear: Boolean,
     latLon: LatLon

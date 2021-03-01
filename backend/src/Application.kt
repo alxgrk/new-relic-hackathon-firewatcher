@@ -6,6 +6,8 @@ import de.alxgrk.input.ActiveFires
 import de.alxgrk.input.Sources
 import de.alxgrk.monitoring.NewRelic
 import de.alxgrk.monitoring.NewRelic.createGlobalRegistry
+import de.alxgrk.push.NewFirePublisher
+import de.alxgrk.push.NewFirePublisher.listen
 import de.alxgrk.push.SubscriptionManager
 import io.ktor.application.*
 import io.ktor.features.*
@@ -16,21 +18,26 @@ import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.slf4j.event.Level
+import persistence.DatabaseFactory
 import push.PushSubscription
 import java.math.RoundingMode
+import kotlin.time.ExperimentalTime
 
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 
+@ExperimentalTime
 @Suppress("unused") // Referenced in application.conf
 @kotlin.jvm.JvmOverloads
 fun Application.module(testing: Boolean = false) {
 
     createGlobalRegistry()
+    with(DatabaseFactory) { init() }
     ActiveFireScheduler().scheduleAcquisition()
+    launch(Dispatchers.IO) {
+        with(NewFirePublisher) { listen() }
+    }
 
     install(Compression) {
         gzip {
@@ -83,8 +90,12 @@ fun Application.module(testing: Boolean = false) {
         post("register-push") {
             val subscription = call.receive<PushSubscription>()
 
+            val lat = call.parameters["lat"]!!.toBigDecimal()
+            val lon = call.parameters["lon"]!!.toBigDecimal()
+            val maxRadiusKm = call.parameters["maxRadiusKm"]!!.toDouble()
+
             with(SubscriptionManager) {
-                store(subscription)
+                store(subscription, Sources.Coordinate(lat, lon), maxRadiusKm)
                 GlobalScope.launch {
                     delay(5000)
                     sendPushMessage(subscription, "Test Notification".toByteArray(Charsets.UTF_8))
@@ -103,12 +114,12 @@ fun Application.module(testing: Boolean = false) {
         }
 
         get("/active-fires") {
-            val minRadiusKm = call.request.queryParameters["minRadiusKm"]?.toDouble() ?: 0.0
-            val maxRadiusKm = call.request.queryParameters["maxRadiusKm"]?.toDouble() ?: 50.0
+            val minRadiusKm = call.parameters["minRadiusKm"]?.toDouble() ?: 0.0
+            val maxRadiusKm = call.parameters["maxRadiusKm"]?.toDouble() ?: 50.0
             require(minRadiusKm in 0.0..maxRadiusKm) { "minRadiusKm must be larger than 0, but not larger than maxRadiusKm" }
 
-            val lat = call.request.queryParameters["lat"]!!.toBigDecimal()
-            val lon = call.request.queryParameters["lon"]!!.toBigDecimal()
+            val lat = call.parameters["lat"]!!.toBigDecimal()
+            val lon = call.parameters["lon"]!!.toBigDecimal()
             val reference = Sources.Coordinate(lat, lon)
 
             data class ResponseItem(

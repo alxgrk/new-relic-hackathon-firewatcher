@@ -18,7 +18,7 @@ import styled.styledDiv
 
 interface SearchAreaProps : RProps {
     var pushManagerState: PushManagerState
-    var onSubscribe: (PushManagerState.NotSubscribed) -> Unit
+    var onSubscribe: (PushManagerState.NotSubscribed, LatLon, Double) -> Unit
     var onUnsubscribe: (PushManagerState.Subscribed) -> Unit
 }
 
@@ -118,7 +118,7 @@ val SearchArea = functionalComponent<SearchAreaProps> { props ->
 
 fun RBuilder.searchArea(
     pushManagerState: PushManagerState,
-    onSubscribe: (PushManagerState.NotSubscribed) -> Unit,
+    onSubscribe: (PushManagerState.NotSubscribed, LatLon, Double) -> Unit,
     onUnsubscribe: (PushManagerState.Subscribed) -> Unit
 ) = child(SearchArea) {
     attrs {
