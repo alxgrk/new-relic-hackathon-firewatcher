@@ -14,10 +14,10 @@
         "type": "image/png"
     }
   ],
-  "start_url": "/",
+  "start_url": "/new-relic-hackathon-firewatcher/",
   "orientation": "portrait",
   "background_color": "#111111",
   "display": "standalone",
-  "scope": "/",
+  "scope": "/new-relic-hackathon-firewatcher/",
   "theme_color": "#e06937"
 }
