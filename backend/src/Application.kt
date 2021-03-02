@@ -1,5 +1,6 @@
 package de.alxgrk
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import de.alxgrk.input.ActiveFireScheduler
 import de.alxgrk.input.ActiveFires
@@ -75,6 +76,7 @@ fun Application.module(testing: Boolean = false) {
     install(ContentNegotiation) {
         jackson {
             enable(SerializationFeature.INDENT_OUTPUT)
+            disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         }
     }
 
@@ -92,7 +94,7 @@ fun Application.module(testing: Boolean = false) {
 
             val lat = call.parameters["lat"]!!.toBigDecimal()
             val lon = call.parameters["lon"]!!.toBigDecimal()
-            val maxRadiusKm = call.parameters["maxRadiusKm"]!!.toDouble()
+            val maxRadiusKm = call.parameters["maxRadius"]!!.toDouble()
 
             with(SubscriptionManager) {
                 store(subscription, Sources.Coordinate(lat, lon), maxRadiusKm)

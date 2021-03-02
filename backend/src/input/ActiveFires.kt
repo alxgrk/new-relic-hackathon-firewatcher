@@ -4,10 +4,12 @@ import com.google.common.collect.Sets
 import de.alxgrk.input.Sources.ConfidenceLevel
 import de.alxgrk.input.Sources.Coordinate
 import de.alxgrk.monitoring.NewRelic
+import io.micrometer.core.instrument.ImmutableTag
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import mu.KotlinLogging
 import persistence.FireData
 import persistence.FireDataRepo
 import java.math.BigDecimal
@@ -15,56 +17,67 @@ import java.util.*
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue
 
+private val logger = KotlinLogging.logger {}
+
 object ActiveFires {
     private val mutex = Mutex()
 
     private val fireDataRepo = FireDataRepo()
 
-    private val referenceCache = LRUCache(20)
-
     val newFiresChannel = Channel<Pair<Coordinate, ConfidenceLevel>>(UNLIMITED)
 
-    val activeFiresCacheSize = NewRelic.registry.gauge("activeFiresCacheSize", referenceCache) { it.size.toDouble() }
-    val activeFiresCacheMisses = NewRelic.registry.counter("activeFiresCacheMisses")
-    val activeFirePersitingTime = NewRelic.registry.summary("activeFirePersitingTimeInMs")
+    private val activeFirePersitingTime = NewRelic.registry.summary("activeFirePersitingTimeInMs")
 
     suspend fun findSortedByCoordinates(reference: Coordinate): TreeMap<ReferenceCoordinate, ConfidenceLevel> =
-        referenceCache[reference]
-            ?: treeMapByHaversinDistance()
-                .also { treeMap ->
-                    activeFiresCacheMisses.increment()
-                    mutex.withLock {
-                        fireDataRepo.getAll().forEach { (_, coord, level) ->
-                            val referenceCoordinate = ReferenceCoordinate(reference, coord)
-                            treeMap[referenceCoordinate] = level
-                        }
-                        referenceCache[reference] = treeMap
+        treeMapByHaversinDistance()
+            .also { treeMap ->
+                mutex.withLock {
+                    fireDataRepo.getAll().forEach { (_, coord, level) ->
+                        val referenceCoordinate = ReferenceCoordinate(reference, coord)
+                        treeMap[referenceCoordinate] = level
                     }
                 }
+            }
 
     @ExperimentalTime
-    suspend fun store(newFires: Map<Coordinate, Pair<Sources, ConfidenceLevel>>) {
+    suspend fun store(newFires: Map<Sources, MutableMap<Coordinate, ConfidenceLevel>>) {
         mutex.withLock {
-            val oldKeys = fireDataRepo.getAllCoordinates().toSet()
-            val newKeys = newFires.keys
-            val firesOngoing = Sets.intersection(oldKeys, newKeys)
-            val firesRemoved = Sets.difference(oldKeys, newKeys)
-            val firesAdded = Sets.difference(newKeys, oldKeys)
+            val currentFires = fireDataRepo.getAllCoordinatesForSource()
+            newFires.entries.forEach { (source, data) ->
+                val currentRows = currentFires[source]?.toMap() ?: mapOf()
+                val currentCoords = currentRows.keys
+                val newCoords = data.keys.toSortedSet { c1, c2 -> c1.latitude.compareTo(c2.latitude) }
+                val firesOngoing = Sets.intersection(currentCoords, newCoords)
+                val firesRemoved = Sets.difference(currentCoords, newCoords)
+                val firesAdded = Sets.difference(newCoords, currentCoords)
 
-            NewRelic.registry.gauge("firesOngoing", firesOngoing.size.toDouble())
-            NewRelic.registry.gauge("firesRemoved", firesRemoved.size.toDouble())
-            NewRelic.registry.gauge("firesAdded", firesAdded.size.toDouble())
+                NewRelic.registry.gauge(
+                    "firesOngoing",
+                    listOf(ImmutableTag("source", source.name)),
+                    firesOngoing.size.toDouble()
+                )
+                NewRelic.registry.gauge(
+                    "firesRemoved",
+                    listOf(ImmutableTag("source", source.name)),
+                    firesRemoved.size.toDouble()
+                )
+                NewRelic.registry.gauge(
+                    "firesAdded",
+                    listOf(ImmutableTag("source", source.name)), firesAdded.size.toDouble()
+                )
 
-            fireDataRepo.removeAll(firesRemoved)
-            (firesAdded + firesOngoing).forEach {
-                val (source, confidenceLevel) = newFires[it]!!
+                val deletions = fireDataRepo.removeAll(firesRemoved.map { currentRows[it]!! })
+                logger.debug { "Successfully deleted $deletions rows for source $source." }
+                firesAdded.forEach {
+                    val confidenceLevel = data[it]!!
 
-                val (_, duration) = measureTimedValue {
-                    fireDataRepo.create(FireData(source, it, confidenceLevel))
+                    val (_, duration) = measureTimedValue {
+                        fireDataRepo.create(FireData(source, it, confidenceLevel))
+                    }
+                    activeFirePersitingTime.record(duration.inMilliseconds)
+
+                    newFiresChannel.send(it to confidenceLevel)
                 }
-                activeFirePersitingTime.record(duration.inMilliseconds)
-
-                newFiresChannel.send(it to confidenceLevel)
             }
         }
     }

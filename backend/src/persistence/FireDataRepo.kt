@@ -1,20 +1,20 @@
 package persistence
 
 import de.alxgrk.input.Sources
+import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.util.*
 
 class FireDataRepo {
 
     fun create(fireData: FireData) {
         transaction {
-            if (FireDataTable.select { whereCoordinate(fireData.coordinate) }.empty()) {
-                FireDataTable.insert {
-                    it[this.fireDataSource] = fireData.source
-                    it[this.latitude] = fireData.coordinate.latitude
-                    it[this.longitude] = fireData.coordinate.longitude
-                    it[this.confidenceLevel] = fireData.confidenceLevel
-                }
+            FireDataTable.insert {
+                it[this.fireDataSource] = fireData.source
+                it[this.latitude] = fireData.coordinate.latitude
+                it[this.longitude] = fireData.coordinate.longitude
+                it[this.confidenceLevel] = fireData.confidenceLevel
             }
         }
     }
@@ -30,17 +30,17 @@ class FireDataRepo {
         FireDataTable.selectAll().map { it.toFireData() }
     }
 
-    fun getAllCoordinates(): List<Sources.Coordinate> = transaction {
-        FireDataTable.selectAll().map { it.toCoordinate() }
+    fun getAllCoordinatesForSource(): Map<Sources, List<Pair<Sources.Coordinate, EntityID<UUID>>>> = transaction {
+        FireDataTable.selectAll().orderBy(FireDataTable.latitude)
+            .map { it[FireDataTable.fireDataSource] to (it.toCoordinate() to it[FireDataTable.id]) }
+            .groupBy({ it.first }) { it.second }
     }
 
-    fun removeAll(firesRemoved: Set<Sources.Coordinate>) {
+    fun removeAll(firesRemoved: List<EntityID<UUID>>) =
         transaction {
-            firesRemoved.forEach {
-                FireDataTable.deleteWhere { whereCoordinate(it) }
-            }
+            firesRemoved.map { FireDataTable.deleteWhere { FireDataTable.id eq it } }
+                .sum()
         }
-    }
 
     fun count(): Long = transaction {
         FireDataTable.slice(FireDataTable.id.countDistinct()).selectAll().count()

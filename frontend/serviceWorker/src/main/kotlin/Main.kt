@@ -59,7 +59,9 @@ fun installServiceWorker() {
                 val cache = self.caches.open(MAIN_CACHE).await()
                 try {
                     val response = self.fetch(event.request).await()
-                    cache.put(event.request, response.clone()).await()
+                    if (event.request.method.equals("GET", ignoreCase = true) || event.request.method.equals("OPTIONS", ignoreCase = true)) {
+                        cache.put(event.request, response.clone()).await()
+                    }
                     return@async response
                 } catch (e: Throwable) {
                     return@async self.caches.match(event.request).await().unsafeCast<Response>()

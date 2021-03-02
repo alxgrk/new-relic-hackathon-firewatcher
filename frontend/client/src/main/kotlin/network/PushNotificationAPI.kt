@@ -56,7 +56,7 @@ object PushNotificationAPI {
             queryParams.entries.joinToString(separator = "&", prefix = "?") { "${it.key}=${it.value}" }
         val url = "${apiUrl}$path$queryParamsAsString"
         val config = jsObject<RequestInit> {
-            method = "post"
+            method = "POST"
             headers = json("Content-Type" to "application/json")
             body = JSON.stringify(subscription)
         }

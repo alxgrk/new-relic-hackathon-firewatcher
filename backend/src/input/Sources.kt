@@ -2,6 +2,7 @@ package de.alxgrk.input
 
 import org.apache.lucene.util.SloppyMath
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 enum class Sources(val url: String) {
     MODIS("https://firms.modaps.eosdis.nasa.gov/data/active_fire/c6/csv/MODIS_C6_Global_24h.csv"),
@@ -31,8 +32,8 @@ enum class Sources(val url: String) {
     companion object {
         fun parse(line: String): Pair<Coordinate, ConfidenceLevel> {
             val values = line.split(',')
-            val latitude = values[0].toBigDecimal()
-            val longitude = values[1].toBigDecimal()
+            val latitude = values[0].toBigDecimal().setScale(2, RoundingMode.HALF_UP)
+            val longitude = values[1].toBigDecimal().setScale(2, RoundingMode.HALF_UP)
             val confidenceLevel = values[8].let {
                 when (it) {
                     "low" -> ConfidenceLevel.LOW

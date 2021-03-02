@@ -10,7 +10,6 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.utils.io.*
 import io.micrometer.core.instrument.ImmutableTag
-import io.micrometer.core.instrument.Metrics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
@@ -52,7 +51,7 @@ class ActiveFireScheduler(
                                         )
 
                                         val channel = response.content
-                                        val entries = mutableListOf<Pair<Sources.Coordinate, Pair<Sources, Sources.ConfidenceLevel>>>()
+                                        val entries = mutableMapOf<Sources.Coordinate, Sources.ConfidenceLevel>()
 
                                         NewRelic.registry.coTimer("parsingTime", "source", source.name).record {
                                             while (!channel.isClosedForRead) {
@@ -61,24 +60,34 @@ class ActiveFireScheduler(
                                                     continue
 
                                                 val (coord, confidenceLevel) = parse(line)
-                                                entries += coord to (source to confidenceLevel)
+                                                entries[coord] = confidenceLevel
                                             }
                                         }
-                                        entries
+                                        source to entries
                                     }
                                 }
-                                .mapNotNull {
+                                .mapNotNull { def ->
                                     try {
-                                        it.await()
+                                        def.await()
                                     } catch (e: Exception) {
                                         logger.error(e) { "Couldn't retrieve CSV data for one source - continuing." }
                                         null
                                     }
                                 }
-                                .flatten()
                                 .toMap()
 
-                            Metrics.gauge("onlineSources", fires.size)
+                            fires.entries.forEach { (source, map) ->
+                                NewRelic.registry.gauge(
+                                    "onlineSources",
+                                    listOf(ImmutableTag("source", source.name)),
+                                    1
+                                )
+                                NewRelic.registry.gauge(
+                                    "dataPointsPerSource",
+                                    listOf(ImmutableTag("source", source.name)),
+                                    map.size
+                                )
+                            }
 
                             if (fires.isEmpty())
                                 throw RuntimeException("No source was reachable, so now fire data could be provided.")
